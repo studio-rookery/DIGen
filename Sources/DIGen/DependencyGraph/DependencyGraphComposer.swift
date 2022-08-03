@@ -11,11 +11,13 @@ struct DependencyGraphComposer {
     
     let parsedFiles: [ParsedFile]
 
+    let imports: [ImportDescriptor]
     let providers: [ProviderDesciptor]
     let injectables: [InjectableDescriptor]
     
     init(parsedFiles: [ParsedFile]) {
         self.parsedFiles = parsedFiles
+        self.imports = parsedFiles.flatMap(\.imports)
         self.providers = parsedFiles.flatMap(\.providerDescriptors)
         self.injectables = parsedFiles.flatMap(\.injectableDescriptors)
     }

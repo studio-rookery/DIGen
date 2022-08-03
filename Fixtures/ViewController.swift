@@ -1,3 +1,6 @@
+import UIKit
+import Foundation
+
 protocol AppProvider: Provider {
     
     func provideURLSession() -> URLSession

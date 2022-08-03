@@ -3,6 +3,23 @@ import SourceKittenFramework
 @testable import DIGen
 
 final class DIGenTests: XCTestCase {
+    
+    func test_parseImportDescriptor() throws {
+        let code = """
+        import UIKit
+        import SwiftUI
+        import UIKit
+        import Foundation
+        import TimeKit
+        
+        struct import {
+            let import: import
+        }
+        """
+        let imports = try ImportDescriptor.imports(in: File(contents: code))
+        XCTAssertEqual(imports.map(\.moduleName), ["UIKit", "SwiftUI", "UIKit", "Foundation", "TimeKit"])
+    }
+    
     func test_parseProviderDescriptor() throws {
         let code = """
         protocol AppProvider: Provider {
@@ -11,8 +28,7 @@ final class DIGenTests: XCTestCase {
             func provideCalendar(param1: Int, param2 param2: Int, _ param3: Int, _: Int) -> Calendar
         }
         """
-        let file = File(contents: code)
-        let parsedFile = ParsedFile(structure: try Structure(file: file))
+        let parsedFile = try ParsedFile(contents: code)
         let providerDescriptor = try XCTUnwrap(parsedFile.providerDescriptors.first)
         let expected = ProviderDesciptor(
             name: "AppProvider",
@@ -69,8 +85,7 @@ final class DIGenTests: XCTestCase {
             }
         }
         """
-        let file = File(contents: code)
-        let parsedFile = ParsedFile(structure: try Structure(file: file))
+        let parsedFile = try ParsedFile(contents: code)
         XCTAssertEqual(
             parsedFile.injectableDescriptors,
             [

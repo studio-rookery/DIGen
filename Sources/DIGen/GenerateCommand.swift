@@ -52,14 +52,13 @@ struct GenerateCommand: ParsableCommand {
         }
         
         let parsedFiles = try files.map { file in
-            ParsedFile(structure: try Structure(file: file))
+            try ParsedFile(file: file)
         }
         
-        let composer = DependencyGraphComposer(parsedFiles: parsedFiles)
-        let resolvers = try composer.makeResolvers()
+        let composer = DependencyGraphComposer(parsedFiles: parsedFiles)        
         
         let generator = CodeGenerator()
-        let generated = generator.generate(from: resolvers)
+        let generated = try generator.generate(from: composer)
         
         return generated
     }

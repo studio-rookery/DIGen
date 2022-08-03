@@ -10,16 +10,19 @@ import SourceKittenFramework
 
 struct ParsedFile {
     
+    let imports: [ImportDescriptor]
     let providerDescriptors: [ProviderDesciptor]
     let injectableDescriptors: [InjectableDescriptor]
     
-    init(structure: Structure) {
+    init(file: File) throws {
+        self.imports = try ImportDescriptor.imports(in: file)
+        let structure = try Structure(file: file)
         self.providerDescriptors = structure.subStructures.compactMap(ProviderDesciptor.init)
         self.injectableDescriptors = structure.subStructures.compactMap(InjectableDescriptor.init)
     }
     
     init(contents: String) throws {
-        let structure = try Structure(file: File(contents: contents))
-        self.init(structure: structure)
+        let file = File(contents: contents)
+        try self.init(file: file)
     }
 }
