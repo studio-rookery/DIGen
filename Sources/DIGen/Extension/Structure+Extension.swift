@@ -1,5 +1,5 @@
 //
-//  File 2.swift
+//  Structure+Extension.swift
 //  
 //
 //  Created by masaki on 2022/08/03.

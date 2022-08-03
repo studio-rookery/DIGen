@@ -1,5 +1,5 @@
 //
-//  File 2.swift
+//  String+Extension.swift
 //  
 //
 //  Created by masaki on 2022/08/03.
