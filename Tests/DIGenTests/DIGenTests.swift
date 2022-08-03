@@ -84,9 +84,9 @@ final class DIGenTests: XCTestCase {
     
     func test_DI() throws {
         let parsedFile = try ParsedFile(contents: vcode)
-        let di = DI(parsedFiles: [parsedFile])
+        let composer = DependencyGraphComposer(parsedFiles: [parsedFile])
         let codeGenerator = CodeGenerator()
-        print(codeGenerator.generate(from: di))
+        print(try codeGenerator.generate(from: composer))
     }
     
     func test_circular_reference() throws {
@@ -107,16 +107,16 @@ final class DIGenTests: XCTestCase {
         }
         struct C: Injectable {
             
-            init(a: A?) {
+            init(a: A) {
             
             }
         }
         """
         
         let parsedFile = try ParsedFile(contents: code)
-        let di = DI(parsedFiles: [parsedFile])
+        let composer = DependencyGraphComposer(parsedFiles: [parsedFile])
         let codeGenerator = CodeGenerator()
-        print(codeGenerator.generate(from: di))
+        XCTAssertThrowsError(try codeGenerator.generate(from: composer))
     }
 }
 
@@ -197,7 +197,7 @@ struct ResolverDescriptor {
     }
 }
 
-struct DI {
+struct DependencyGraphComposer {
     
     let parsedFiles: [ParsedFile]
 
@@ -210,12 +210,12 @@ struct DI {
         self.injectables = parsedFiles.flatMap(\.injectableDescriptors)
     }
     
-    func makeResolvers() -> [ResolverDescriptor] {
-        providers.map(makeResolver(from:))
+    func makeResolvers() throws -> [ResolverDescriptor] {
+        try providers.map(makeResolver(from:))
     }
     
-    func makeResolver(from provider: ProviderDesciptor) -> ResolverDescriptor {
-        let graph = DependencyGraph(provider: provider, injectables: injectables)
+    func makeResolver(from provider: ProviderDesciptor) throws -> ResolverDescriptor {
+        let graph = try DependencyGraph(provider: provider, injectables: injectables)
         return ResolverDescriptor(
             providerName: provider.name,
             graph: graph
@@ -225,7 +225,7 @@ struct DI {
 
 struct CodeGenerator {
     
-    func generate(from di: DI) -> String {
+    func generate(from composer: DependencyGraphComposer) throws -> String {
         let header = """
         public protocol Injectable {
         
@@ -237,7 +237,7 @@ struct CodeGenerator {
         
         
         """
-        let resolvers = generate(from: di.makeResolvers())
+        let resolvers = try generate(from: composer.makeResolvers())
         return header + resolvers
     }
     
@@ -349,7 +349,7 @@ final class DependencyNode {
     
     func add(_ nodeRef: DependencyNodeRef) throws {
         guard !nodeRef.reculsiveDepdenecyRefs.map(\.typeName).contains(typeName), nodeRef.typeName != typeName else {
-            fatalError()
+            throw DependencyError.couldNotResolveGraph(typeName, nodeRef.typeName)
         }
         
         dependencies.append(nodeRef)
@@ -360,11 +360,11 @@ struct DependencyGraph {
     
     private let nodes: [String : DependencyNode]
     
-    init(provider: ProviderDesciptor, injectables: [InjectableDescriptor]) {
+    init(provider: ProviderDesciptor, injectables: [InjectableDescriptor]) throws {
         let allNodes = injectables.map(DependencyNode.init) + provider.functions.compactMap(DependencyNode.init)
         let keyValues = allNodes.map { ($0.typeName, $0) }
         self.nodes = Dictionary(keyValues) { a, b in b }
-        self.nodes.forEach { (key, node) in
+        try self.nodes.forEach { (key, node) in
             let dependencies = node.arguments.map { argument -> DependencyNodeRef in
                 if let dependecy = nodes[argument.typeName] {
                     return DependencyNodeRef(argument: argument, dependency: dependecy)
@@ -373,8 +373,8 @@ struct DependencyGraph {
                 }
             }
             
-            dependencies.forEach {
-                try! node.add($0)
+            try dependencies.forEach {
+                try node.add($0)
             }
         }
     }
@@ -478,5 +478,16 @@ struct ParsedFile {
     init(contents: String) throws {
         let structure = try Structure(file: File(contents: contents))
         self.init(structure: structure)
+    }
+}
+
+enum DependencyError: LocalizedError {
+    case couldNotResolveGraph(String, String)
+    
+    var errorDescription: String? {
+        switch self {
+        case .couldNotResolveGraph(let typeA, let typeB):
+            return "Could not resolve dependency graph due to circular references in `\(typeA)` and `\(typeB)`."
+        }
     }
 }
