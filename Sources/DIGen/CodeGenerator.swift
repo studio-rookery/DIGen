@@ -30,40 +30,43 @@ struct CodeGenerator {
     }
     
     func generate(from resolver: ResolverDescriptor) -> String {
-        func code<T: CustomStringConvertible>(_ objects: [T], inserLineBreak: Bool = true) -> String {
-            objects
-                .map {
-                    $0
-                        .description
-                        .indented()
-                        .lines
-                        .filter { line in
-                            !line.allSatisfy { $0 == " " }
-                        }
-                }
-                .joined(separator: inserLineBreak ? [""] : [])
-                .compactMap { $0 }
-                .joinedWithLineBreak()
-        }
-        
         let result = """
         protocol \(resolver.name): \(resolver.providerName) {
-        \(code(resolver.resolveFunctionInterfaces, inserLineBreak: false))
+        \(generateCode(resolver.resolveFunctionInterfaces, inserLineBreak: false))
         
-        \(code(resolver.interceptFunctionInterfaces, inserLineBreak: false))
+        \(generateCode(resolver.interceptFunctionInterfaces, inserLineBreak: false))
         }
         
         extension \(resolver.name) {
         
-        \(code(resolver.resolveFunctionImpls))
+        \(generateCode(resolver.resolveFunctionImpls))
         }
         
         extension \(resolver.name) {
         
-        \(code(resolver.interceptFunctionImpls))
+        \(generateCode(resolver.interceptFunctionImpls))
         }
         """
         
         return result
+    }
+}
+
+private extension CodeGenerator {
+    
+    func generateCode<T: CustomStringConvertible>(_ objects: [T], inserLineBreak: Bool = true) -> String {
+        objects
+            .map { object in
+                object
+                    .description
+                    .indented()
+                    .lines
+                    .filter { line in
+                        !line.allSatisfy { $0 == " " }
+                    }
+            }
+            .joined(separator: inserLineBreak ? [""] : [])
+            .compactMap { $0 }
+            .joinedWithLineBreak()
     }
 }

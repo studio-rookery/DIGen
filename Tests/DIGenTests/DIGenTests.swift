@@ -118,6 +118,39 @@ final class DIGenTests: XCTestCase {
         let codeGenerator = CodeGenerator()
         XCTAssertThrowsError(try codeGenerator.generate(from: composer.makeResolvers()))
     }
+    
+    func test_same_param() throws {
+        let code = """
+        protocol AppProvider: Provider { }
+        
+        struct A: Injectable {
+            
+            init(b: B, c: C) {
+                
+            }
+        }
+
+        struct B: Injectable {
+            
+            init(c: C) {
+                
+            }
+        }
+
+        struct C {
+            
+            init() {
+                
+            }
+        }
+        """
+        
+        let parsedFile = try ParsedFile(contents: code)
+        let composer = DependencyGraphComposer(parsedFiles: [parsedFile])
+        let codeGenerator = CodeGenerator()
+        let result = try codeGenerator.generate(from: composer.makeResolvers())
+        print(result)
+    }
 }
 
 let vcode = """

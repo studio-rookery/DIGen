@@ -8,7 +8,7 @@
 import Foundation
 
 @dynamicMemberLookup
-struct DependencyNodeRef {
+struct DependencyNodeRef: Equatable {
     
     let argument: ArgumentDescriptor
     let dependency: DependencyNode
@@ -22,7 +22,15 @@ struct DependencyNodeRef {
     }
 }
 
-final class DependencyNode {
+final class DependencyNode: Equatable {
+    
+    static func == (lhs: DependencyNode, rhs: DependencyNode) -> Bool {        
+        func equal<T: Equatable>(_ keyPath: KeyPath<DependencyNode, T>) -> Bool {
+            lhs[keyPath: keyPath] == rhs[keyPath: keyPath]
+        }
+        
+        return equal(\.typeName) && equal(\.injectType) && equal(\.function) && equal(\.dependencies)
+    }
     
     enum Error: LocalizedError {
         case couldNotResolveGraph(String, String)
@@ -80,6 +88,7 @@ final class DependencyNode {
         dependencies.flatMap { ref in
             [ref] + ref.reculsiveDepdenecyRefs
         }
+        .uniqued()
     }
     
     func add(_ nodeRef: DependencyNodeRef) throws {
@@ -118,25 +127,16 @@ struct DependencyGraph {
         nodes.keys.sorted()
     }
     
-    func reculsiveDepdenecyRefs(of typeName: String) -> [DependencyNodeRef] {
-        guard let node = nodes[typeName] else {
-            return []
-        }
-        
-        return node.dependencies.flatMap { ref in
-            [ref] + reculsiveDepdenecyRefs(of: ref.dependency.typeName)
-        }
-    }
-    
     func makeResolveFunctionInterface(for typeName: String) -> FunctionInterfaceDescriptor {
         FunctionInterfaceDescriptor(
             scope: .instance,
             name: "resolve\(typeName)",
-            arguments: reculsiveDepdenecyRefs(of: typeName)
+            arguments: nodes[typeName]?
+                .reculsiveDepdenecyRefs
                 .filter(\.isParameterInjectType)
                 .map { node in
                     node.argument
-                },
+                } ?? [],
             returnTypeName: typeName
         )
     }
@@ -198,4 +198,3 @@ struct DependencyGraph {
         )
     }
 }
-
