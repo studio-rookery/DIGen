@@ -25,6 +25,10 @@ extension URL: ExpressibleByArgument {
     var isSwiftFile: Bool {
         pathExtension == "swift"
     }
+    
+    func isInclusive(exclusiveURLs: [URL]) -> Bool {
+        !exclusiveURLs.map(\.path).contains(where: path.hasPrefix)
+    }
 }
 
 struct GenerateCommand: ParsableCommand {
@@ -32,20 +36,28 @@ struct GenerateCommand: ParsableCommand {
     @Argument(help: "base path for search swift files")
     var path: URL
     
+    @Option(name: .shortAndLong, help: "exclusive paths")
+    var exclusivePaths: [String]
+    
     mutating func run() throws {
-        let parameter = Parameter(path: path)
+        let parameter = Parameter(path: path, exclusivePaths: exclusivePaths)
         let output = try run(with: parameter)
         print(output)
     }
     
     struct Parameter {
         let path: URL
+        var exclusivePaths: [String]
+        var exclusiveURLs: [URL] {
+            exclusivePaths.map(path.appendingPathComponent)
+        }
     }
     
     func run(with parameter: Parameter) throws -> String {
         let swiftURLs = FileManager.default
             .recursiveURLs(in: parameter.path)
             .filter(\.isSwiftFile)
+            .filter { $0.isInclusive(exclusiveURLs: parameter.exclusiveURLs) }
         
         let files = swiftURLs.compactMap { url in
             File(path: url.path)
