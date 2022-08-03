@@ -65,7 +65,7 @@ final class DependencyNode {
     init(parameter typeName: String) {
         self.injectType = .parameter
         self.typeName = typeName
-        self.function = .init(scope: .instance, name: "", arguments: [], returnTypeName: nil)
+        self.function = nil
     }
     
     var functionName: String {

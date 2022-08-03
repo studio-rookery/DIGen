@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import ArgumentParser
 import SourceKittenFramework
 
 extension FileManager {
@@ -15,22 +16,35 @@ extension FileManager {
     }
 }
 
-extension URL {
+extension URL: ExpressibleByArgument {
+    
+    public init?(argument: String) {
+        self.init(string: argument)
+    }
     
     var isSwiftFile: Bool {
         pathExtension == "swift"
     }
 }
 
-struct GenerateCommand {
+struct GenerateCommand: ParsableCommand {
+    
+    @Argument(help: "base path for search swift files")
+    var path: URL
+    
+    mutating func run() throws {
+        let parameter = Parameter(path: path)
+        let output = try run(with: parameter)
+        print(output)
+    }
     
     struct Parameter {
-        let url: URL
+        let path: URL
     }
     
     func run(with parameter: Parameter) throws -> String {
         let swiftURLs = FileManager.default
-            .recursiveURLs(in: parameter.url)
+            .recursiveURLs(in: parameter.path)
             .filter(\.isSwiftFile)
         
         let files = swiftURLs.compactMap { url in
