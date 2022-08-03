@@ -309,8 +309,8 @@ final class DependencyNode {
     
     let typeName: String
     let injectType: InjectType
-    let function: FunctionInterfaceDescriptor
-
+    
+    private let function: FunctionInterfaceDescriptor?
     private(set) var dependencies: [DependencyNodeRef] = []
     
     init?(providerFunction: FunctionInterfaceDescriptor) {
@@ -334,8 +334,12 @@ final class DependencyNode {
         self.function = .init(scope: .instance, name: "", arguments: [], returnTypeName: nil)
     }
     
+    var functionName: String {
+        function?.name ?? ""
+    }
+    
     var arguments: [ArgumentDescriptor] {
-        function.arguments
+        function?.arguments ?? []
     }
     
     var reculsiveDepdenecyRefs: [DependencyNodeRef] {
@@ -434,7 +438,7 @@ struct DependencyGraph {
             "\(argument.label): \(argument.label)"
         }
         .joined(separator: ", ")
-        let compose = node.injectType == .provider ? "return \(node.function.name)(\(v))" : "return .\(node.function.name)(\(v))"
+        let compose = node.injectType == .provider ? "return \(node.functionName)(\(v))" : "return .\(node.functionName)(\(v))"
         let impl = """
         return intercept\(typeName) {
         \(localVariables.indented())
