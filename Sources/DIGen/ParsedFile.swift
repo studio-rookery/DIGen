@@ -15,10 +15,11 @@ struct ParsedFile {
     let injectableDescriptors: [InjectableDescriptor]
     
     init(file: File) throws {
-        self.imports = try ImportDescriptor.imports(in: file)
         let structure = try Structure(file: file)
         self.providerDescriptors = structure.subStructures.compactMap(ProviderDesciptor.init)
         self.injectableDescriptors = structure.subStructures.compactMap(InjectableDescriptor.init)
+        let isRequiredImports = !providerDescriptors.isEmpty || !injectableDescriptors.isEmpty
+        self.imports = isRequiredImports ? try ImportDescriptor.imports(in: file) : []
     }
     
     init(contents: String) throws {
