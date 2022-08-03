@@ -86,7 +86,7 @@ final class DIGenTests: XCTestCase {
         let parsedFile = try ParsedFile(contents: vcode)
         let composer = DependencyGraphComposer(parsedFiles: [parsedFile])
         let codeGenerator = CodeGenerator()
-        print(try codeGenerator.generate(from: composer))
+        print(try codeGenerator.generate(from: composer.makeResolvers()))
     }
     
     func test_circular_reference() throws {
@@ -116,7 +116,7 @@ final class DIGenTests: XCTestCase {
         let parsedFile = try ParsedFile(contents: code)
         let composer = DependencyGraphComposer(parsedFiles: [parsedFile])
         let codeGenerator = CodeGenerator()
-        XCTAssertThrowsError(try codeGenerator.generate(from: composer))
+        XCTAssertThrowsError(try codeGenerator.generate(from: composer.makeResolvers()))
     }
 }
 
@@ -225,7 +225,7 @@ struct DependencyGraphComposer {
 
 struct CodeGenerator {
     
-    func generate(from composer: DependencyGraphComposer) throws -> String {
+    func generate(from resolvers: [ResolverDescriptor]) -> String {
         let header = """
         public protocol Injectable {
         
@@ -237,15 +237,12 @@ struct CodeGenerator {
         
         
         """
-        let resolvers = try generate(from: composer.makeResolvers())
-        return header + resolvers
-    }
-    
-    func generate(from resolvers: [ResolverDescriptor]) -> String {
-        resolvers
+        let generated = resolvers
             .map(generate(from:))
             .map { $0 + .lineBreak }
             .joinedWithLineBreak()
+        
+        return header + generated
     }
     
     func generate(from resolver: ResolverDescriptor) -> String {
