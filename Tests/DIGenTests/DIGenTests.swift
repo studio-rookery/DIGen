@@ -215,8 +215,7 @@ struct DI {
     }
     
     func makeResolver(from provider: ProviderDesciptor) -> ResolverDescriptor {
-        let nodes = DependencyNode.nodes(provider: provider, injectables: injectables)
-        let graph = DependencyGraph(nodes: nodes)
+        let graph = DependencyGraph(provider: provider, injectables: injectables)
         return ResolverDescriptor(
             providerName: provider.name,
             graph: graph
@@ -355,14 +354,17 @@ final class DependencyNode {
         
         dependencies.append(nodeRef)
     }
+}
+
+struct DependencyGraph {
     
-    static func nodes(provider: ProviderDesciptor, injectables: [InjectableDescriptor]) -> [String : DependencyNode] {
+    private let nodes: [String : DependencyNode]
+    
+    init(provider: ProviderDesciptor, injectables: [InjectableDescriptor]) {
         let allNodes = injectables.map(DependencyNode.init) + provider.functions.compactMap(DependencyNode.init)
-        let nodes: [String : DependencyNode] = Dictionary(allNodes.map { ($0.typeName, $0) }) { a, b in
-            b
-        }
-        
-        nodes.forEach { (key, node) in
+        let keyValues = allNodes.map { ($0.typeName, $0) }
+        self.nodes = Dictionary(keyValues) { a, b in b }
+        self.nodes.forEach { (key, node) in
             let dependencies = node.arguments.map { argument -> DependencyNodeRef in
                 if let dependecy = nodes[argument.typeName] {
                     return DependencyNodeRef(argument: argument, dependency: dependecy)
@@ -375,17 +377,6 @@ final class DependencyNode {
                 try! node.add($0)
             }
         }
-        
-        return nodes
-    }
-}
-
-struct DependencyGraph {
-    
-    private let nodes: [String : DependencyNode]
-
-    init(nodes: [String : DependencyNode]) {
-        self.nodes = nodes
     }
     
     var typeNames: [String] {
