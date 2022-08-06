@@ -17,7 +17,7 @@ struct ParsedFile {
     init(file: File) throws {
         let structure = try Structure(file: file)
         self.providerDescriptors = structure.subStructures.compactMap(ProviderDesciptor.init)
-        self.injectableDescriptors = structure.subStructures.compactMap(InjectableDescriptor.init)
+        self.injectableDescriptors = try structure.subStructures.compactMap(InjectableDescriptor.init)
         let isRequiredImports = !providerDescriptors.isEmpty || !injectableDescriptors.isEmpty
         self.imports = isRequiredImports ? try ImportDescriptor.imports(in: file) : []
     }
