@@ -105,7 +105,7 @@ struct DependencyGraph {
     private let nodes: [String : DependencyNode]
     
     init(provider: ProviderDesciptor, injectables: [InjectableDescriptor]) throws {
-        let allNodes = injectables.map(DependencyNode.init) + provider.functions.compactMap(DependencyNode.init)
+        let allNodes = injectables.map(DependencyNode.init) + provider.allFunctions.compactMap(DependencyNode.init)
         let keyValues = allNodes.map { ($0.typeName, $0) }
         self.nodes = Dictionary(keyValues) { a, b in b }
         try self.nodes.forEach { (key, node) in

@@ -67,7 +67,7 @@ struct GenerateCommand: ParsableCommand {
             try ParsedFile(file: file)
         }
         
-        let composer = DependencyGraphComposer(parsedFiles: parsedFiles)        
+        let composer = try DependencyGraphComposer(parsedFiles: parsedFiles)        
         
         let generator = CodeGenerator()
         let generated = try generator.generate(from: composer)

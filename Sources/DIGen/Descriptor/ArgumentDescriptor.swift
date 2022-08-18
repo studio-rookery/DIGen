@@ -8,7 +8,7 @@
 import Foundation
 import SourceKittenFramework
 
-struct ArgumentDescriptor: Equatable, CustomStringConvertible {
+struct ArgumentDescriptor: Hashable, CustomStringConvertible {
     
     let label: String
     let name: String?

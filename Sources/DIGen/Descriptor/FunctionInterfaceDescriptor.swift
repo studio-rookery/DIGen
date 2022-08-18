@@ -8,7 +8,7 @@
 import Foundation
 import SourceKittenFramework
 
-enum FunctionScope {
+enum FunctionScope: Hashable {
     case instance
     case `static`
     case `class`
@@ -27,7 +27,7 @@ enum FunctionScope {
     }
 }
 
-struct FunctionInterfaceDescriptor: Equatable, CustomStringConvertible {
+struct FunctionInterfaceDescriptor: Hashable, CustomStringConvertible {
     
     let scope: FunctionScope
     let name: String

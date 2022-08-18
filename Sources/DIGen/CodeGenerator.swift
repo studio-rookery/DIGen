@@ -17,7 +17,7 @@ struct CodeGenerator {
         
         \(generateImports(from: composer))
         
-        \(generate(from: try composer.makeResolvers()))
+        \(generate(from: composer.resolvers))
         """
     }
     
@@ -54,7 +54,7 @@ struct CodeGenerator {
     
     func generate(from resolver: ResolverDescriptor) -> String {
         let result = """
-        protocol \(resolver.name): \(resolver.providerName) {
+        protocol \(resolver.name): \(([resolver.providerName] + resolver.inhertedResolverNames).joined(separator: ", ")) {
         \(generateCode(resolver.resolveFunctionInterfaces, inserLineBreak: false))
         
         \(generateCode(resolver.interceptFunctionInterfaces, inserLineBreak: false))

@@ -11,26 +11,32 @@ struct DependencyGraphComposer {
     
     let parsedFiles: [ParsedFile]
 
-    let imports: [ImportDescriptor]
-    let providers: [ProviderDesciptor]
-    let injectables: [InjectableDescriptor]
+    let imports: [ImportDescriptor]    
+    let resolvers: [ResolverDescriptor]
     
-    init(parsedFiles: [ParsedFile]) {
+    init(parsedFiles: [ParsedFile]) throws {
         self.parsedFiles = parsedFiles
         self.imports = parsedFiles.flatMap(\.imports)
-        self.providers = parsedFiles.flatMap(\.providerDescriptors)
-        self.injectables = parsedFiles.flatMap(\.injectableDescriptors)
-    }
-    
-    func makeResolvers() throws -> [ResolverDescriptor] {
-        try providers.map(makeResolver(from:))
-    }
-    
-    func makeResolver(from provider: ProviderDesciptor) throws -> ResolverDescriptor {
-        let graph = try DependencyGraph(provider: provider, injectables: injectables)
-        return ResolverDescriptor(
-            providerName: provider.name,
-            graph: graph
-        )
+        let injectables = parsedFiles.flatMap(\.injectableDescriptors)
+        let protocolTree = try ProtocolTree(nodes: parsedFiles.flatMap(\.protocolNodes))
+        let providers = protocolTree
+            .descendants(of: ProviderDesciptor.providerProtocolName)
+            .compactMap(ProviderDesciptor.init)
+        
+        let resolvers = try providers.map { provider in
+            try ResolverDescriptor(
+                provider: provider,
+                graph: DependencyGraph(provider: provider, injectables: injectables)
+            )
+        }
+        
+        let resolverMap = Dictionary(grouping: resolvers, by: \.name).compactMapValues(\.first)
+        resolverMap.forEach { typeName, resolver in
+            resolver
+                .inhertedResolverNames
+                .compactMap { resolverMap[$0] }
+                .forEach(resolver.addParent)
+        }
+        self.resolvers = resolvers
     }
 }

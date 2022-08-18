@@ -52,3 +52,95 @@ final class InjectableDescriptorTests: XCTestCase {
         }
     }
 }
+
+struct A { }
+struct B { }
+struct C { }
+
+protocol AProvider: Provider {
+    func provide() -> A
+}
+protocol BProvider: AProvider {
+    func provide() -> B
+}
+protocol CProvider: BProvider {
+    func provide() -> C
+}
+public protocol Injectable {
+
+}
+
+public protocol Provider {
+
+}
+
+protocol AResolver: AProvider {
+     func resolveA() -> A
+
+     func interceptA(_ build: () -> A) -> A
+}
+
+extension AResolver {
+
+     func resolveA() -> A {
+          return interceptA {
+               return provide()
+          }
+     }
+}
+
+extension AResolver {
+
+     func interceptA(_ build: () -> A) -> A {
+          return build()
+     }
+}
+
+protocol BResolver: BProvider, AResolver {
+     func resolveB() -> B
+
+     func interceptB(_ build: () -> B) -> B
+}
+
+extension BResolver {
+
+     func resolveB() -> B {
+          return interceptB {
+               return provide()
+          }
+     }
+}
+
+extension BResolver {
+
+     func interceptB(_ build: () -> B) -> B {
+          return build()
+     }
+}
+
+protocol CResolver: CProvider, BResolver {
+     func resolveC() -> C
+
+     func interceptC(_ build: () -> C) -> C
+}
+
+extension CResolver {
+
+     func resolveC() -> C {
+          return interceptC {
+               return provide()
+          }
+     }
+}
+
+extension CResolver {
+
+     func interceptC(_ build: () -> C) -> C {
+          return build()
+     }
+}
+
+
+func test(resolver: CResolver) {
+    
+}

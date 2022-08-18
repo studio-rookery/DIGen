@@ -50,7 +50,9 @@ final class DIGenTests: XCTestCase {
                     ],
                     returnTypeName: "Calendar"
                 ),
-            ]
+            ],
+            inheritedFunctions: [],
+            inheritedProviderNames: []
         )
         XCTAssertEqual(providerDescriptor, expected)
     }
@@ -99,9 +101,9 @@ final class DIGenTests: XCTestCase {
     
     func test_DI() throws {
         let parsedFile = try ParsedFile(contents: vcode)
-        let composer = DependencyGraphComposer(parsedFiles: [parsedFile])
+        let composer = try DependencyGraphComposer(parsedFiles: [parsedFile])
         let codeGenerator = CodeGenerator()
-        print(try codeGenerator.generate(from: composer.makeResolvers()))
+        print(codeGenerator.generate(from: composer.resolvers))
     }
     
     func test_circular_reference() throws {
@@ -129,9 +131,7 @@ final class DIGenTests: XCTestCase {
         """
         
         let parsedFile = try ParsedFile(contents: code)
-        let composer = DependencyGraphComposer(parsedFiles: [parsedFile])
-        let codeGenerator = CodeGenerator()
-        XCTAssertThrowsError(try codeGenerator.generate(from: composer.makeResolvers()))
+        XCTAssertThrowsError(try DependencyGraphComposer(parsedFiles: [parsedFile]))
     }
     
     func test_same_param() throws {
@@ -161,9 +161,50 @@ final class DIGenTests: XCTestCase {
         """
         
         let parsedFile = try ParsedFile(contents: code)
-        let composer = DependencyGraphComposer(parsedFiles: [parsedFile])
+        let composer = try DependencyGraphComposer(parsedFiles: [parsedFile])
         let codeGenerator = CodeGenerator()
-        let result = try codeGenerator.generate(from: composer.makeResolvers())
+        let result = codeGenerator.generate(from: composer.resolvers)
+        print(result)
+    }
+    
+    func test_inheritedProvider() throws {
+        let code = """
+        protocol AProvider: Provider {
+            func provide() -> A
+        }
+        protocol BProvider: AProvider {
+            func provide() -> B
+        }
+        protocol CProvider: BProvider {
+            func provide() -> C
+        }
+        """
+        
+        let parsedFile = try ParsedFile(contents: code)
+        let composer = try DependencyGraphComposer(parsedFiles: [parsedFile])
+        let codeGenerator = CodeGenerator()
+        let result = codeGenerator.generate(from: composer.resolvers)
+        print(result)
+    }
+    
+    func test_inheritedProvider2() throws {
+        let code = """
+        struct ViewModel: Injectable {
+            init(userID: UserID) { }
+        }
+        
+        protocol AProvider: Provider {
+        
+        }
+        protocol BProvider: AProvider {
+            func provideUserID() -> UserID
+        }
+        """
+        
+        let parsedFile = try ParsedFile(contents: code)
+        let composer = try DependencyGraphComposer(parsedFiles: [parsedFile])
+        let codeGenerator = CodeGenerator()
+        let result = codeGenerator.generate(from: composer.resolvers)
         print(result)
     }
 }
@@ -174,6 +215,11 @@ protocol AppProvider: Provider {
     func provideURLSession() -> URLSession
     func provideAPIClient() -> APIClient
     func provideRepository() -> Repository
+}
+
+protocol NewProvider: AppProvider {
+    
+    func provideUserID() -> String
 }
 
 protocol APIClient {

@@ -21,4 +21,9 @@ extension Array {
         
         return result
     }
+    
+    func filterUnique() -> [Element] where Element: Hashable {
+        let counts = Dictionary(grouping: self) { $0 }.mapValues(\.count)
+        return filter { counts[$0] == 1 }
+    }
 }

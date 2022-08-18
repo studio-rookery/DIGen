@@ -14,6 +14,16 @@ struct ProviderDesciptor: Equatable {
     
     let name: String
     let functions: [FunctionInterfaceDescriptor]
+    let inheritedFunctions: [FunctionInterfaceDescriptor]
+    let inheritedProviderNames: [String]
+    
+    func canMakeInterceptFunction(of typeName: String) -> Bool {
+        !inheritedFunctions.compactMap(\.returnTypeName).contains(typeName)
+    }
+    
+    var allFunctions: [FunctionInterfaceDescriptor] {
+        (functions + inheritedFunctions).uniqued()
+    }
 }
 
 extension ProviderDesciptor {
@@ -26,5 +36,23 @@ extension ProviderDesciptor {
         self.functions = structure.subStructures
             .compactMap(FunctionInterfaceDescriptor.init)
             .filter(\.isProvideFunction)
+        self.inheritedProviderNames = []
+        self.inheritedFunctions = []
+    }
+    
+    init?(from node: ProtocolTree.Node) {
+        let structure = node.structure
+        guard let name = structure.name else {
+            return nil
+        }
+        self.name = name
+        self.functions = structure.subStructures
+            .compactMap(FunctionInterfaceDescriptor.init)
+            .filter(\.isProvideFunction)
+        self.inheritedFunctions = node
+            .reculsiveParents
+            .compactMap(ProviderDesciptor.init)
+            .flatMap(\.functions)
+        self.inheritedProviderNames = node.parents.map(\.typeName)
     }
 }
