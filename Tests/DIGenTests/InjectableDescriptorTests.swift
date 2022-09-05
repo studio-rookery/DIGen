@@ -37,7 +37,7 @@ final class InjectableDescriptorTests: XCTestCase {
     
     func test_parse_noInit_orFactoryMethod() throws {
         let code = """
-        struct A: Injectable {
+        class A: Injectable {
         
         }
         """
@@ -50,6 +50,29 @@ final class InjectableDescriptorTests: XCTestCase {
         } catch {
             throw error
         }
+    }
+    
+    func test_parse_memberwise_initializer() throws {
+        let code = """
+        struct A: Injectable {
+            let value: Int
+        }
+        """
+        
+        let parsedFile = try ParsedFile(contents: code)
+        let result = parsedFile.injectableDescriptors[0]
+        XCTAssertEqual(
+            result,
+            InjectableDescriptor(
+                typeName: "A",
+                injectFunction: .init(
+                    scope: .instance,
+                    name: "init",
+                    arguments: [.init(label: "value", name: "value", typeName: "Int")],
+                    returnTypeName: nil
+                )
+            )
+        )
     }
 }
 

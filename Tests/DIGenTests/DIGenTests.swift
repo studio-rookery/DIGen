@@ -207,6 +207,32 @@ final class DIGenTests: XCTestCase {
         let result = codeGenerator.generate(from: composer.resolvers)
         print(result)
     }
+    
+    func test_inheritedProvider3() throws {
+        let code = """
+        struct ViewModel: Injectable {
+            init(userID: UserID, repository: Repository, appState: AppState) { }
+        }
+        
+        protocol InfraProvider: Provider {
+            func provideRepository() -> Repository
+        }
+        
+        protocol AppProvider: Provider {
+            func provideAppState() -> AppState
+        }
+        
+        protocol MainProvider: AppProvider, InfraProvider {
+            
+        }
+        """
+        
+        let parsedFile = try ParsedFile(contents: code)
+        let composer = try DependencyGraphComposer(parsedFiles: [parsedFile])
+        let codeGenerator = CodeGenerator()
+        let result = codeGenerator.generate(from: composer.resolvers)
+        print(result)
+    }
 }
 
 let vcode = """
@@ -264,3 +290,42 @@ final class ViewController: UIViewController, Injectable {
     }
 }
 """
+
+protocol P1 {
+    
+    func test() -> String
+}
+
+extension P1 {
+    
+    func test() -> String {
+        "P1"
+    }
+}
+
+protocol P2 {
+    
+    func test() -> String
+}
+
+extension P2 {
+    
+    func test() -> String {
+        "P1"
+    }
+}
+
+protocol P3: P1 {
+    
+}
+
+extension P3 {
+    
+    func test() -> String {
+        "P3"
+    }
+}
+
+struct C3: P3 {
+    
+}
