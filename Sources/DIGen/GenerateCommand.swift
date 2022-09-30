@@ -37,7 +37,7 @@ struct GenerateCommand: ParsableCommand {
     var path: URL
     
     @Option(name: .shortAndLong, help: "exclusive paths")
-    var exclusivePaths: [String]
+    var exclusivePaths: [String] = []
     
     mutating func run() throws {
         let parameter = Parameter(path: path, exclusivePaths: exclusivePaths)
