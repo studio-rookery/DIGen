@@ -110,7 +110,7 @@ struct DependencyGraph {
         self.nodes = Dictionary(keyValues) { a, b in b }
         try self.nodes.forEach { (key, node) in
             let dependencies = node.arguments.map { argument -> DependencyNodeRef in
-                if let dependecy = nodes[argument.typeName] {
+                if let dependecy = nodes[argument.typeName] ?? nodes["any " + argument.typeName] {
                     return DependencyNodeRef(argument: argument, dependency: dependecy)
                 } else {
                     return DependencyNodeRef(argument: argument, dependency: DependencyNode(parameter: argument.typeName))
