@@ -22,7 +22,7 @@ extension String {
     func indented() -> String {
         lines
             .map {
-                "     \($0)"
+                "    \($0)"
             }
             .joinedWithLineBreak()
     }
