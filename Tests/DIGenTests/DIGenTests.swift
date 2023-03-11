@@ -233,6 +233,30 @@ final class DIGenTests: XCTestCase {
         let result = codeGenerator.generate(from: composer.resolvers)
         print(result)
     }
+    
+    func test_any_keyword() throws {
+        let code = """
+        protocol AppProvider: Provider {
+            func provide() -> any Repository
+        }
+        
+        struct A: Injectable {
+            let repository: any Repository
+        }
+        
+        struct B: Injectable {
+            let repository: Repository
+        }
+        """
+        
+        let parsedFile = try ParsedFile(contents: code)
+        let composer = try DependencyGraphComposer(parsedFiles: [parsedFile])
+        let codeGenerator = CodeGenerator()
+        let result = codeGenerator.generate(from: composer.resolvers)
+        let formatted = try! File(contents: result).format(trimmingTrailingWhitespace: true, useTabs: false, indentWidth: 4)
+    
+        print(formatted)
+    }
 }
 
 let vcode = """

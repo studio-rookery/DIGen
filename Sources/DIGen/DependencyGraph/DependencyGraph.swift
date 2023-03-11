@@ -130,7 +130,7 @@ struct DependencyGraph {
     func makeResolveFunctionInterface(for typeName: String) -> FunctionInterfaceDescriptor {
         FunctionInterfaceDescriptor(
             scope: .instance,
-            name: "resolve\(typeName)",
+            name: "resolve\(typeNameInMethodSignature(typeName))",
             arguments: nodes[typeName]?
                 .reculsiveDepdenecyRefs
                 .filter(\.isParameterInjectType)
@@ -144,7 +144,7 @@ struct DependencyGraph {
     func makeInterceptFunctionInterface(for typeName: String) -> FunctionInterfaceDescriptor {
         FunctionInterfaceDescriptor(
             scope: .instance,
-            name: "intercept\(typeName)",
+            name: "intercept\(typeNameInMethodSignature(typeName))",
             arguments: [
                 .init(label: "_", name: "build", typeName: "() -> \(typeName)")
             ],
@@ -174,7 +174,7 @@ struct DependencyGraph {
         .joined(separator: ", ")
         let compose = node.injectType == .provider ? "return \(node.functionName)(\(v))" : "return .\(node.functionName)(\(v))"
         let impl = """
-        return intercept\(typeName) {
+        return \(makeInterceptFunctionInterface(for: typeName).name) {
         \(localVariables.indented())
         \(compose.indented())
         }
@@ -196,5 +196,16 @@ struct DependencyGraph {
             interface: makeInterceptFunctionInterface(for: typeName),
             impl: "return build()"
         )
+    }
+}
+
+private extension DependencyGraph {
+    
+    func typeNameInMethodSignature(_ original: String) -> String {
+        if original.hasPrefix("any ") {
+            return String(original.dropFirst(4))
+        } else {
+            return original
+        }
     }
 }
